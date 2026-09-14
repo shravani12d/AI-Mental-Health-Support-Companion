@@ -1,25 +1,26 @@
 package com.example.mentalhealthchatbot.Service;
 
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.Response;
-import com.sendgrid.SendGrid;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 
 @Service
 public class EmailService {
 
-    @Value("${SENDGRID_API_KEY}")
-    private String sendGridApiKey;
+    private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
+
+    public EmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     // ===== PUBLIC METHODS =====
 
@@ -53,32 +54,20 @@ public class EmailService {
 
         validateConfig();
 
-        Email from = new Email("seramentalwellness@gmail.com"); // must be verified in SendGrid
-        Email to = new Email(toEmail);
-
-        Content content = new Content("text/plain", body);
-        Mail mail = new Mail(from, subject, to, content);
-
-        SendGrid sg = new SendGrid(sendGridApiKey);
-
-        Request request = new Request();
-
         try {
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
-            Response response = sg.api(request);
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, false);
 
-            // IMPORTANT: always log response
-            System.out.println("SendGrid Status: " + response.getStatusCode());
-            System.out.println("SendGrid Body: " + response.getBody());
+            mailSender.send(message);
 
-            if (response.getStatusCode() >= 400) {
-                throw new RuntimeException("SendGrid failed: " + response.getBody());
-            }
+            System.out.println("Email sent successfully to " + toEmail);
 
-        } catch (IOException ex) {
+        } catch (MessagingException ex) {
             throw new RuntimeException("Email sending failed", ex);
         }
     }
@@ -86,21 +75,18 @@ public class EmailService {
     // ===== HELPERS =====
 
     private void validateConfig() {
-        if (sendGridApiKey == null || sendGridApiKey.isBlank()) {
-            throw new RuntimeException("Missing SENDGRID_API_KEY in environment");
+        if (fromEmail == null || fromEmail.isBlank()) {
+            throw new RuntimeException("Missing spring.mail.username in environment");
         }
-
         if (frontendUrl == null || frontendUrl.isBlank()) {
             throw new RuntimeException("Missing app.frontend.url in environment");
         }
     }
 
     private String buildResetLink(String token) {
-
         String base = frontendUrl.endsWith("/")
                 ? frontendUrl.substring(0, frontendUrl.length() - 1)
                 : frontendUrl;
-
         return base + "/reset-password?token=" + token;
     }
 }
