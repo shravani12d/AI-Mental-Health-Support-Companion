@@ -16,12 +16,12 @@ public class AdminController {
     @Value("${admin.trigger.secret}")
     private String triggerSecret;
 
-    @PostMapping("/trigger-weekly-report")
-    public ResponseEntity<?> triggerWeeklyReport(@RequestHeader("X-Trigger-Secret") String secret) {
-        if (!triggerSecret.equals(secret)) {
-            return ResponseEntity.status(403).body("Forbidden");
-        }
-        weeklyReportService.sendWeeklyReports();
-        return ResponseEntity.ok("Weekly report job triggered");
+  @PostMapping("/trigger-weekly-report")
+public ResponseEntity<?> triggerWeeklyReport(@RequestHeader("X-Trigger-Secret") String secret) {
+    if (!triggerSecret.equals(secret)) {
+        return ResponseEntity.status(403).body("Forbidden");
     }
+    new Thread(() -> weeklyReportService.sendWeeklyReports()).start();
+    return ResponseEntity.ok("Weekly report job started");
+}
 }
