@@ -5,7 +5,6 @@ import com.example.mentalhealthchatbot.model.User;
 import com.example.mentalhealthchatbot.repository.MoodEntryRepository;
 import com.example.mentalhealthchatbot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -63,7 +62,7 @@ public class WeeklyReportService {
             "Under 100 words. No subject line. No sign off.";
 
 
-        String missedBody = geminiService.getAIResponse(missedPrompt, new ArrayList<>());
+       String missedBody = geminiService.getAIResponseStrict(missedPrompt, new ArrayList<>());
         emailService.sendWeeklyReport(user.getEmail(), user.getName(), missedBody);
          user.setLastMissedYouEmailSent(LocalDateTime.now());
          userRepository.save(user);
@@ -92,7 +91,7 @@ public class WeeklyReportService {
                     "Do not use clinical language. Write like a caring friend who understands mental health. " +
                     "Keep it under 200 words. Do not include a subject line.";
 
-                String emailBody = geminiService.getAIResponse(prompt, new ArrayList<>());
+              String emailBody = geminiService.getAIResponseStrict(prompt, new ArrayList<>());
 
                 emailService.sendWeeklyReport(user.getEmail(), user.getName(), emailBody);
 
