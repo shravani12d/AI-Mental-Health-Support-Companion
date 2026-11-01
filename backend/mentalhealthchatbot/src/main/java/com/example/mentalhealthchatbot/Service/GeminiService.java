@@ -137,4 +137,16 @@ public class GeminiService {
             return "I'm having trouble connecting right now. Please try again in a moment.";
         }
     }
+    public String getAIResponseStrict(String message, List<Map<String, String>> history) {
+    for (int i = 1; i <= 3; i++) {
+        String result = getAIResponse(message, history);
+        if (!result.startsWith("I'm having trouble connecting")
+                && !result.startsWith("I'm here for you. Please try again")) {
+            return result;
+        }
+        try { Thread.sleep(3000L * i); }
+        catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+    }
+    throw new RuntimeException("Gemini failed after 3 tries");
+}
 }
